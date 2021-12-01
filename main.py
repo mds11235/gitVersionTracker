@@ -4,8 +4,8 @@
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
 from github import Github
-from versionTracker.app import app
+from gitVersionTracker.app import app
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(use_reloader=False)

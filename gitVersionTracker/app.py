@@ -120,8 +120,10 @@ class RepoResource(Resource):
     def delete(self):
         name = name_parser.parse_args()['name']
         repo = Repo.query.filter_by(name=name).first()
+
         if repo is None:
             abort(404, description="Could not find repo '{}' for deletion.".format(name))
+
         db.session.delete(repo)
         db.session.commit()
         return '', 204

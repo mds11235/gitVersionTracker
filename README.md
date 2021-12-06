@@ -32,12 +32,49 @@ python main.py
 
 
 ## Usage
+### Login
+Create a new user
+```bash
+curl http://localhost:5000/user \
+    -X POST -H \
+    "Content-Type: application/json" \
+    -d '{"user":"<USERNAME>","password":"<PASSWORD>"}'
+```
 
+Get a user
+```bash
+curl http://localhost:5000/user \
+    -u <USERNAME>:<PASSWORD> \
+    -X GET \
+    -H "Content-Type: application/json" \
+    -d '{"user":<USER NAME>}'
+```
+
+Update existing user password
+```bash
+curl http://localhost:5000/user \
+    -u <USERNAME>:<PASSWORD> \
+    -X PATCH \
+    -H "Content-Type: application/json" \
+    -d '{"user":"<USERNAME>","old_pw":"<EXISTING PASSWORD>","new_pw":"<NEW PASSWORD>"}'
+```
+
+Delete a user
+```bash
+curl http://localhost:5000/user \
+    -u <USERNAME>:<PASSWORD> \
+    -X DELETE \
+    -H "Content-Type: application/json" \
+    -d '{"user":"<USER NAME>","password":"<PASSWORD>"}'
+```
+
+### App Functionality
 You will need to have a [git personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) with permissions to public repositories for any repository you are trying to track with this tool.
 
 Add a repository to the system.
 ```bash
 curl http://localhost:5000/repo \
+    -u <USERNAME>:<PASSWORD> \
     -X POST \
     -H "Content-Type: application/json" \
     -d '{"name":"<REPOSITORY NAME>", "token":"<GITHUB ACCESS TOKEN>"}'
@@ -46,6 +83,7 @@ curl http://localhost:5000/repo \
 Get a repository from the system.
 ```bash
 curl http://localhost:5000/repo \
+    -u <USERNAME>:<PASSWORD> \
     -X GET \
     -H "Content-Type: application/json" \
     -d '{"name":"<REPOSITORY NAME>"}'
@@ -54,6 +92,7 @@ curl http://localhost:5000/repo \
 Refresh latest version for all repositories associated with the provided token.
 ```bash
 curl http://localhost:5000/repo \
+    -u <USERNAME>:<PASSWORD> \
     -X PATCH \
     -H "Content-Type: application/json" \
     -d '{"token":"<GITHUB ACCESS TOKEN>"}'
@@ -62,6 +101,7 @@ curl http://localhost:5000/repo \
 Delete a repository from the system
 ```bash
 curl http://localhost:5000/repo \
+    -u <USERNAME>:<PASSWORD> \
     -X DELETE \
     -H "Content-Type: application/json" \
     -d '{"name":"<REPOSITORY NAME>"}'

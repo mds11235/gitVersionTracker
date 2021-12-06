@@ -1,9 +1,10 @@
+from bcrypt import checkpw, gensalt, hashpw
 from flask import Flask
 from flask_marshmallow import Marshmallow
 from flask_restful import Api, Resource, reqparse, abort
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import IntegrityError
 from github import Github, GithubException, BadCredentialsException
+from sqlalchemy.exc import IntegrityError
 
 
 app = Flask(__name__)
@@ -15,6 +16,9 @@ api = Api(app)
 name_parser = reqparse.RequestParser()
 name_parser.add_argument('name')
 
+token_parser = reqparse.RequestParser()
+token_parser.add_argument('token')
+
 name_token_parser = reqparse.RequestParser()
 name_token_parser.add_argument('name')
 name_token_parser.add_argument('token')
@@ -22,18 +26,18 @@ name_token_parser.add_argument('token')
 
 class Repo(db.Model):
     name = db.Column(db.String(128), primary_key=True)
-    token = db.Column(db.String(64), nullable=False)
+    token_hash = db.Column(db.String(64), nullable=False)
     version_title = db.Column(db.String(64), nullable=False)
     published_at = db.Column(db.DateTime, nullable=False)
     seen = db.Column(db.Boolean, nullable=False)
 
     def __repr__(self):
-        return '<Repo %r %r %r>' % (self.name, self.version_title, self.published_at)
+        return '<Repo %r %r %r %r>' % (self.name, self.version_title, self.published_at, self.seen)
 
 
 class RepoSchema(ma.Schema):
     class Meta:
-        # token not included in order to obfuscate sensitive data
+        # token hash purposely not included
         fields = ("name", "version_title", "published_at", "seen")
         model = Repo
 
@@ -59,22 +63,14 @@ def _get_latest_release(repo):
     return releases[0]
 
 
-def _make_repo(name, token, title, pub_date, seen):
+def _make_repo(name, token_hash, title, pub_date, seen):
     return Repo(
         name=name,
-        token=token,
+        token_hash=token_hash,
         version_title=title,
         published_at=pub_date,
         seen=seen
     )
-
-
-def _add_repo_to_db(new_repo):
-    db.session.add(new_repo)
-    try:
-        db.session.commit()
-    except IntegrityError as i:
-        abort(500, description=i.args)
 
 
 class RepoResource(Resource):
@@ -97,25 +93,36 @@ class RepoResource(Resource):
         token = args['token']
 
         latest_release = _get_latest_release(_get_remote_repo(name, token))
-        new_repo = _make_repo(name, token, latest_release.title, latest_release.published_at, False)
-        _add_repo_to_db(new_repo)
+        token_hash = hashpw(token.encode('utf-8'), gensalt())
+        new_repo = _make_repo(name, token_hash, latest_release.title, latest_release.published_at, False)
+
+        db.session.add(new_repo)
+        try:
+            db.session.commit()
+        except IntegrityError as i:
+            abort(500, description=i.args)
 
         return repo_schema.dump(new_repo)
 
     # In a more robust version I would add a way to update tokens and
     # add better error handling for expired tokens during updates.
     def patch(self):
+        token = token_parser.parse_args()['token']
         repos = Repo.query.all()
-
+        updated_repos = []
         for repo in repos:
-            latest_release = _get_latest_release(_get_remote_repo(repo.name, repo.token))
+            if not checkpw(token.encode('utf-8'), repo.token_hash):
+                continue
+
+            latest_release = _get_latest_release(_get_remote_repo(repo.name, token))
             if latest_release.published_at > repo.published_at:
                 repo.published_at = latest_release.published_at
                 repo.version_title = latest_release.title
                 repo.seen = False
+                updated_repos.append(repo)
 
         db.session.commit()
-        return repo_schema.dump(repos, many=True)
+        return repo_schema.dump(updated_repos, many=True)
 
     def delete(self):
         name = name_parser.parse_args()['name']

@@ -35,7 +35,7 @@ python main.py
 
 You will need to have a [git personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) with permissions to public repositories for any repository you are trying to track with this tool.
 
-Add a repo to the system.
+Add a repository to the system.
 ```bash
 curl http://localhost:5000/repo \
     -X POST \
@@ -51,11 +51,12 @@ curl http://localhost:5000/repo \
     -d '{"name":"<REPOSITORY NAME>"}'
 ```
 
-Refresh latest version for all repositories in the system
+Refresh latest version for all repositories associated with the provided token.
 ```bash
 curl http://localhost:5000/repo \
     -X PATCH \
-    -H "Content-Type: application/json"
+    -H "Content-Type: application/json" \
+    -d '{"token":"<GITHUB ACCESS TOKEN>"}'
 ```
 
 Delete a repository from the system

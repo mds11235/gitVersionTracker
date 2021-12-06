@@ -6,6 +6,7 @@ charset-normalizer==2.0.8
 click==8.0.3
 Deprecated==1.2.13
 Flask==2.0.2
+Flask-HTTPAuth==4.5.0
 flask-marshmallow==0.14.0
 Flask-RESTful==0.3.9
 Flask-Restless==0.17.0
